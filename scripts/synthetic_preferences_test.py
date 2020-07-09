@@ -10,8 +10,8 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 
 
-sys.path.insert(1, "/home/eric/Code/chai/test/learning-from-human-preferences")
-sys.path.insert(2, "/home/eric/Code/chai/test/learning-from-human-preferences/drlhp")
+#sys.path.insert(1, "/home/eric/Code/chai/test/learning-from-human-preferences")
+#sys.path.insert(2, "/home/eric/Code/chai/test/learning-from-human-preferences/drlhp")
 from drlhp import HumanPreferencesEnvWrapper
 from drlhp.reward_predictor_core_network import net_cnn
 
