@@ -15,8 +15,7 @@ class BlurWrapper(VecEnvWrapper):
         super(BlurWrapper, self).__init__(venv)
         self.mask = mask
 
-    @staticmethod
-    def blur_score(obs: np.ndarray) -> np.ndarray:
+    def blur_score(self, obs: np.ndarray) -> np.ndarray:
         """
         Blur out the score region of `obs`
         """
@@ -57,5 +56,5 @@ class BlurSeaquestScore(BlurWrapper):
     def __init__(self, venv):
         assert venv.observation_space.shape == (84, 84, 4)
         M = np.zeros((84, 84))
-        M[3:7, 38:56] = 1.
-        super(BlurBreakoutScore, self).__init__(venv, M)
+        M[3:8, 38:56] = 1.
+        super(BlurSeaquestScore, self).__init__(venv, M)
