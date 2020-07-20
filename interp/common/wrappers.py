@@ -15,7 +15,6 @@ class BlurWrapper(VecEnvWrapper):
         super(BlurWrapper, self).__init__(venv)
         self.mask = mask
 
-    @staticmethod
     def blur_score(obs: np.ndarray) -> np.ndarray:
         """
         Blur out the score region of `obs`
@@ -59,3 +58,18 @@ class BlurSeaquestScore(BlurWrapper):
         M = np.zeros((84, 84))
         M[3:7, 38:56] = 1.
         super(BlurBreakoutScore, self).__init__(venv, M)
+
+
+class CustomRewardWrapper(VecEnvWrapper):
+    """
+    Wrapper for overriding the environment reward with a custom reward function.
+    """
+
+    def __init__(self, venv, reward_function):
+        super(CustomRewardWrapper, self).__init__(venv)
+        self.reward_function = reward_function
+
+    def step_wait(self) -> 'GymStepReturn':
+        observations, rewards, dones, infos = self.venv.step_wait()
+        custom_rewards = self.reward_function(observations)
+        return observations, custom_rewards, dones, infos
