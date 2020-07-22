@@ -69,7 +69,7 @@ class ScoreMaskerWrapper(gym.Wrapper, ABC):
     game score of an Atari observation."""
 
     def __init__(self, env):
-        assert env is AtariEnv
+        # assert env is AtariEnv
         assert env.game in supported_games
         super(ScoreMaskerWrapper, self).__init__(env)
         self.mask = np.zeros((210, 160, 3))
@@ -96,7 +96,7 @@ class BlurAtariScore(ScoreMaskerWrapper):
 
 def RemoveAtariScore(ScoreMaskerWrapper):
     def __init__(self, env):
-        super(BlurAtariScore, self).__init__(env)
+        super(RemoveAtariScore, self).__init__(env)
 
     def modify_image(self, image: np.ndarray) -> np.ndarray:
         return image * (1 - self.mask) + (self.mask * supported_games[self.env.game]['color'])
