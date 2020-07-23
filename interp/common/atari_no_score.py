@@ -15,7 +15,7 @@ supported_games = {
                 (35, 81) # column range to modify
             )
         ],
-        'color': np.array([0, 0, 0]),
+        'sample_background_loc': (10, 10)
     },
     'seaquest': {
         'shape': (210, 160, 3),
@@ -25,7 +25,7 @@ supported_games = {
                 (70, 120)
             )
         ],
-        'color': np.array([ 45,  50, 184])
+        'sample_background_loc': (8, 65)
     },
     'pong': {
         'shape': (210, 160, 3),
@@ -35,7 +35,7 @@ supported_games = {
                 (15, 145)
             )
         ],
-        'color': np.array([109, 118,  43])
+        'sample_background_loc': (10, 10)
     },
     'space_invaders': {
         'shape': (210, 160, 3),
@@ -49,7 +49,7 @@ supported_games = {
                 (80, 150)
             )
         ],
-        'color': np.array([0, 0, 0])
+        'sample_background_loc': (7, 7)
     },
     'tennis': {
         'shape': (250, 160, 3),
@@ -63,7 +63,7 @@ supported_games = {
                 (94, 136)
             ),
         ],
-        'color': np.array([168,  48, 143])
+        'sample_background_loc': (31, 29)
     }
 }
 
@@ -74,6 +74,8 @@ class AtariEnvModifiedScoreBase(AtariEnv, ABC):
     """
 
     def __init__(self, *args, **kwargs):
+        if kwargs.get('obs_type') and kwargs['obs_type'] == 'ram':
+            raise Exception("Only image-based observations can have their score obscurred.")
         super(AtariEnvModifiedScoreBase, self).__init__(*args, **kwargs)
         assert self.game in supported_games
         self.mask = np.zeros(supported_games[self.game]['shape'])
@@ -94,19 +96,21 @@ class AtariEnvNoScore(AtariEnvModifiedScoreBase):
         Create Atari Environment without the score displayed.
 
         Args:
-            game (str)
-            mode=None
-            difficulty=None,
-            obs_type='ram',
-            frameskip=(2, 5),
-            repeat_action_probability=0.,
-            full_action_space=False):
+            game (str): The name of the Atari game, in lowercase. Ex: 'breakout'
+            mode: As far as I can tell, this parameter is never used. Defaults to None.
+            difficulty: Also appears to not be used. Defaults to None.
+            obs_type (str): 'image' or 'ram'
+            frameskip (tuple or int): Set to 1 for NoFrameskip. 
+            repeat_action_probability (float): Does what you think.
+            full_action_space (bool): whether to use the full action space.
         """
         super(AtariEnvNoScore, self).__init__(*args, **kwargs)
 
     def _get_image(self):
         image = self.ale.getScreenRGB2()
-        image = image * (1 - self.mask) + (self.mask * supported_games[self.game]['color'])
+        sx, sy = supported_games[self.game]['sample_background_loc']
+        color = image[sx, sy]
+        image = image * (1 - self.mask) + (self.mask * color)
         return image.astype(np.uint8)
 
 
@@ -120,19 +124,19 @@ class AtariEnvBlurScore(AtariEnvModifiedScoreBase):
         Create Atari Environment with the score blurred out.
 
         Args:
-            game (str)
-            mode=None
-            difficulty=None,
-            obs_type='ram',
-            frameskip=(2, 5),
-            repeat_action_probability=0.,
-            full_action_space=False):
+            game (str): The name of the Atari game, in lowercase. Ex: 'breakout'
+            mode: As far as I can tell, this parameter is never used. Defaults to None.
+            difficulty: Also appears to not be used. Defaults to None.
+            obs_type (str): 'image' or 'ram'
+            frameskip (tuple or int): Set to 1 for NoFrameskip. 
+            repeat_action_probability (float): Does what you think. Defaults to 0.
+            full_action_space (bool): whether to use the full action space. Defaults to False.
         """
         super(AtariEnvBlurScore, self).__init__(*args, **kwargs)
 
     def _get_image(self):
         image = self.ale.getScreenRGB2()
-        A = scipy.ndimage.gaussian_filter(image, 3)
+        A = scipy.ndimage.gaussian_filter(image, sigma=(3, 3, 0))
         image = image * (1 - self.mask) + (A * self.mask)
         return image.astype(np.uint8)
 
