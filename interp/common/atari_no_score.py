@@ -108,6 +108,7 @@ class AtariEnvNoScore(AtariEnvModifiedScoreBase):
 
     def _get_image(self):
         image = self.ale.getScreenRGB2()
+        assert image.shape == self.mask.shape, "Game observation dimensions don't mask mask dimensions"
         sx, sy = supported_games[self.game]['sample_background_loc']
         color = image[sx, sy]
         image = image * (1 - self.mask) + (self.mask * color)
@@ -136,6 +137,7 @@ class AtariEnvBlurScore(AtariEnvModifiedScoreBase):
 
     def _get_image(self):
         image = self.ale.getScreenRGB2()
+        assert image.shape == self.mask.shape, "Game observation dimensions don't mask mask dimensions"
         A = scipy.ndimage.gaussian_filter(image, sigma=(3, 3, 0))
         image = image * (1 - self.mask) + (A * self.mask)
         return image.astype(np.uint8)
