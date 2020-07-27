@@ -40,7 +40,7 @@ class VanillaFrameStack(FrameStack):
 
 
 if __name__ == '__main__':
-    save_dir = Path() / 'drlhp_pong'
+    save_dir = pathlib.Path() / 'drlhp_pong'
     if not save_dir.exists():
         save_dir.mkdir()
     env = gym.make('PongNoFrameskip-v4')
@@ -54,9 +54,9 @@ if __name__ == '__main__':
                             reward_predictor_network=net_cnn,
                             segment_length=100,
                             synthetic_prefs=True,
-                            log_dir: str = "drlhp-pong/drlhp_logs/"
+                            log_dir="drlhp-pong/drlhp_logs/",
                             n_initial_training_steps=0)
-    model = A2C('CnnPolicy', preferences_env, verbose=1)
+    model = A2C('CnnPolicy', preferences_env, verbose=1, device='cpu')
     model.learn(total_timesteps=int(1e6), eval_env=env)
     model.save(save_dir / 'model.zip')
 
