@@ -33,12 +33,13 @@ ALGOS = {
 
 @ex.config
 def my_config():
-    env_id = "PongNoFrameskip-v4"          # the gym environment to use
-    algo = "ppo"                        # the RL algorithm to use
-    timesteps = int(1e7)                # number of timesteps to train the policy on
-    synthetic_preferences = True        # whether to use synthetic preferences
-    device = get_device()               # the device to put/train the SB3 model on
-    eval_freq = timesteps // 1000       # frequency to evaluate a SB3 model and possibly save new best
+    env_id = "PongNoFrameskip-v4"        # the gym environment to use
+    algo = "ppo"                         # the RL algorithm to use
+    timesteps = int(1e7)                 # number of timesteps to train the policy on
+    synthetic_preferences = True         # whether to use synthetic preferences
+    segment_length = 40                  # the length of the segments to be compared
+    device = get_device()                # the device to put/train the SB3 model on
+    eval_freq = timesteps // 1000        # frequency to evaluate a SB3 model and possibly save new best
 
 
 @ex.main
@@ -47,6 +48,7 @@ def run(
         algo,
         timesteps,
         synthetic_preferences,
+        segment_length,
         device,
         eval_freq
 ):
@@ -62,7 +64,7 @@ def run(
     env = AtariFrameStack(env, n_stack=4)
     preferences_env = HumanPreferencesEnvWrapper(env=env,
                             reward_predictor_network=net_cnn,
-                            segment_length=100,
+                            segment_length=segment_length,
                             synthetic_prefs=synthetic_preferences,
                             log_dir=save_dir,
                             n_initial_training_steps=5,
