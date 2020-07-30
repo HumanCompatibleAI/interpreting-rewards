@@ -20,6 +20,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from drlhp import HumanPreferencesEnvWrapper
 from drlhp.reward_predictor_core_network import net_cnn
 
+from imitation.util import sacred as sacred_util
 from interp.utils import get_latest_run_id, AtariFrameStack
 
 ex = Experiment()
@@ -44,6 +45,7 @@ def my_config():
 
 @ex.main
 def run(
+        _run,
         env_id,
         algo,
         timesteps,
@@ -59,6 +61,9 @@ def run(
     save_dir = osp.join("output", 'drlhp', algo)
     save_dir = osp.join(save_dir, f"{env_id}_{get_latest_run_id(save_dir, env_id) + 1}")
     print(f"Saving to {save_dir}")
+    if not pathlib.Path(save_dir).exists():
+        pathlib.Path(save_dir).mkdir()
+    sacred_util.build_sacred_symlink(save_dir, _run)
     env = gym.make(env_id)
     env = AtariPreprocessing(env, frame_skip=1)
     env = AtariFrameStack(env, n_stack=4)
