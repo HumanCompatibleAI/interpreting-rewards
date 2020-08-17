@@ -93,14 +93,13 @@ if __name__ == '__main__':  # noqa: C901
 
     env_id = args.env
     if 'NoFrameskip' not in env_id:
-    	raise Exception(f"env {env_id} is not an Atari env")
+        raise Exception(f"env {env_id} is not an Atari env")
     env = gym.make(args.env)
     env = AtariWrapper(env)
     env = DummyVecEnv([lambda: env])
     env = VecFrameStack(env, n_stack=4)
     print(f"Created env with obs.shape = {env.reset().shape}.")
     
-    rd_model = RewardModel(env, device)
     
     train = RewardData(env_id, train=True)
     test = RewardData(env_id, train=False)
@@ -108,22 +107,23 @@ if __name__ == '__main__':  # noqa: C901
     train_loader = th.utils.data.DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
     test_loader = th.utils.data.DataLoader(test, batch_size=20, shuffle=False, num_workers=0)
     
-    optimizer = th.optim.Adam(rm.parameters())
+    reward_model = RewardModel(env, device)
+    optimizer = th.optim.Adam(reward_model.parameters())
     loss_fn = th.nn.MSELoss(reduction="sum")
     
     num_batches = 0
-    for e in tqdm(range(args.epochs)):	
-    	for samples, targets in train_loader:
-    	    optimizer.zero_grad()
-    	    batch_loss = loss_fn(rm(samples), targets.to(device))
-    	    batch_loss.backward()
-    	    optimizer.step()
-    	    num_batches += 1
-    	test_loss = 0
-    	for samples, targets in test_loader:
-    		with torch.no_grad():
-    			test_loss += loss_fn(rm(samples), targets.to(device))
-    	print("Epoch {:3d} | Test Loss: {:.4f}".format(e, float(test_loss)))
+    for e in range(args.epochs):        
+        for samples, targets in tqdm(train_loader):
+            optimizer.zero_grad()
+            batch_loss = loss_fn(reward_model(samples), targets.to(device))
+            batch_loss.backward()
+            optimizer.step()
+            num_batches += 1
+        test_loss = 0
+        for samples, targets in test_loader:
+            with th.no_grad():
+                test_loss += loss_fn(reward_model(samples), targets.to(device))
+        print("Epoch {:3d} | Test Loss: {:.4f}".format(e, float(test_loss) / len(test)))
     
-    th.save(rm.state_dict(), f"../reward-models/{env_id}-rm.pt")
-	
+    th.save(reward_model.state_dict(), f"../reward-models/{env_id}-reward_model.pt")
+        
