@@ -20,13 +20,14 @@ import torch as th
 import torch.nn as nn  # noqa: F401 pytype: disable=unused-import
 
 from sacred import Experiment
+from sacred.observers import FileStorageObserver
 
 from stable_baselines3.common.utils import set_random_seed
 # from stable_baselines3.common.cmd_util import make_atari_env
 from stable_baselines3.common.vec_env import VecFrameStack, VecNormalize, DummyVecEnv, VecTransposeImage
 from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from stable_baselines3.common.utils import constant_fn
+from stable_baselines3.common.utils import constant_fn, get_device
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3 import A2C, PPO, DQN
 
@@ -43,6 +44,7 @@ from imitation.util import sacred as sacred_util
 from imitation.util.reward_wrapper import RewardVecEnvWrapper
 import interp
 from interp.utils import get_latest_run_id
+from interp.common.wrappers import CustomRewardWrapper, DummyWrapper
 
 seaborn.set()
 
@@ -78,37 +80,32 @@ def config():
     algo = "ppo"                         # the RL algorithm to use
     if 'NoFrameskip' not in env_id:
         raise Exception("Only Atari environments allowed")
-    with open(f'hyperparams/{algo}.yml', 'r') as f:
-        hyperparams_dict = yaml.safe_load(f)
-        elif is_atari:
-            hyperparams = hyperparams_dict['atari']
-        else:
-            raise ValueError(f"Hyperparameters not found for {algo}-{env_id}")
     timesteps = int(1e7)                 # number of timesteps to train the policy on
     device = get_device()                # the device to put/train the SB3 model on
     eval_freq = timesteps // 1000        # frequency to evaluate a SB3 model and possibly save new best
     regressed_reward = False            # whether to override the environment reward with a reward model
-    remove_score = False                 # whether to remove the score from the environment
     verbose = 1                          # verbosity to the max
     use_uuid = False                     # whether to use a unique uuid for the experiment
-    eval_episodes =  10
+    eval_episodes = 10                   # how many episodes to use when evaluating return
 
-@ex.automain
-def main(
+@ex.main
+def run(
     _run,
     env_id,
     algo,
-    hyperparams,
     timesteps,
     device,
     eval_freq,
-    regresed_reward,
-    remove_score,
+    regressed_reward,
     seed,
     verbose,
     use_uuid,
     eval_episodes,
     ):
+
+    with open(f'hyperparams/{algo}.yml', 'r') as f:
+        hyperparams_dict = yaml.safe_load(f)
+        hyperparams = hyperparams_dict['atari']
 
     uuid_str = f'_{uuid.uuid4()}' if use_uuid else ''
     set_random_seed(seed)
@@ -177,9 +174,9 @@ def main(
 
     # obtain a class object from a wrapper name string in hyperparams
     # and delete the entry
-    # env_wrapper = get_wrapper_class(hyperparams)
-    # if 'env_wrapper' in hyperparams.keys():
-    #     del hyperparams['env_wrapper']
+    env_wrapper = get_wrapper_class(hyperparams)
+    if 'env_wrapper' in hyperparams.keys():
+        del hyperparams['env_wrapper']
 
     log_path = f"output/regressed_exps/{algo}/"
     if not os.path.exists(log_path):
@@ -202,8 +199,8 @@ def main(
             (issue with writing the same file)
         :return: (Union[gym.Env, VecEnv])
         """
-        global hyperparams
-        global env_kwargs
+        # global hyperparams
+        # global env_kwargs
 
         # Do not log eval env (issue with writing the same file)
         log_dir = None if eval_env or no_log else save_path
@@ -240,20 +237,24 @@ def main(
             env = VecFrameStack(env, n_stack)
             print(f"Stacking {n_stack} frames")
 
-        if is_image_space(env.observation_space):
-            if verbose > 0:
-                print("Wrapping into a VecTransposeImage")
-            env = VecTransposeImage(env)
         if regressed_reward:
-            name = env_id.split("NoFrameskip")[0].lower()
-            rm_path = f"../reward-models/{name}-rm-v1.pt"
+            name = env_id.split("NoFrameskip")[0]
+            rm_path = f"../reward-models/{name}NoFrameskip-v4-reward_model.pt"
             if not os.path.exists(rm_path):
                 raise Exception(f"Cannot find reward reward model at {rm_path}")
             rm = RewardModel(env, device)
             rm.load_state_dict(th.load(rm_path))
-            def reward_fn(obs, action, next_obs, infos):
-                return rm(next_obs)
-            env = RewardVecEnvWrapper(env, reward_fn)
+            # def reward_fn(obs, action, next_obs, infos):
+            #     return rm(next_obs).cpu().detach().numpy()
+            # env = RewardVecEnvWrapper(env, reward_fn)
+            env = CustomRewardWrapper(env, rm)
+        else:
+            env = DummyWrapper(env)
+
+        if is_image_space(env.observation_space):
+            if verbose > 0:
+                print("Wrapping into a VecTransposeImage")
+            env = VecTransposeImage(env)
         return env
 
     env = create_env(n_envs, regressed_reward=regressed_reward)
@@ -281,7 +282,7 @@ def main(
                                          callback_on_new_best=save_vec_normalize,
                                          best_model_save_path=save_path, n_eval_episodes=eval_episodes,
                                          log_path=save_path, eval_freq=eval_freq,
-                                         deterministic=not is_atari)
+                                         deterministic=not True)
 
             callbacks.append(eval_callback)
 
@@ -410,7 +411,7 @@ def main(
     # print(f"Log path: {save_path}")
 
     try:
-        model.learn(n_timesteps, eval_log_path=save_path, eval_env=eval_env, eval_freq=eval_freq, **kwargs)
+        model.learn(timesteps, eval_log_path=save_path, eval_env=eval_env, eval_freq=eval_freq, **kwargs)
     except KeyboardInterrupt:
         pass
 
@@ -428,3 +429,17 @@ def main(
         model.get_vec_normalize_env().save(os.path.join(params_path, 'vecnormalize.pkl'))
         # Deprecated saving:
         # env.save_running_average(params_path)
+
+
+def main_console():
+    observer = FileStorageObserver.create(os.path.join("output", "sacred"))
+    ex.observers.append(observer)
+    ex.run_commandline()
+
+
+if __name__ == "__main__":
+    main_console()
+
+
+
+
