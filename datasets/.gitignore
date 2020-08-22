@@ -1,4 +1,4 @@
-# Ignore everything in this directory
-*
+# Ignore hdf5 files in this directory 
+*.hdf5
 # Except this file
 !.gitignore
