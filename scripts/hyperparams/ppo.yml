@@ -1,6 +1,6 @@
 maze:
   policy: 'MlpPolicy'
-  gamma: 0.99
+  gamma: 0.97
   n_timesteps: !!float 1e5
 
 atari:

@@ -3,6 +3,7 @@ import os
 import sys
 import importlib
 import yaml
+import time
 
 import gym
 import numpy as np
@@ -33,6 +34,7 @@ def main():  # noqa: C901
                         type=int)
     parser.add_argument('--verbose', help='Verbose mode (0: no output, 1: INFO)', default=1,
                         type=int)
+    parser.add_argument('--wait', help='time to wait after each step', default=0.0, type=float)
     parser.add_argument('--no-render', action='store_true', default=False,
                         help='Do not render the environment (useful for tests)')
     parser.add_argument('--deterministic', action='store_true', default=False,
@@ -154,6 +156,7 @@ def main():  # noqa: C901
         if isinstance(env.action_space, gym.spaces.Box):
             action = np.clip(action, env.action_space.low, env.action_space.high)
         obs, reward, done, infos = env.step(action)
+        time.sleep(args.wait)
         if not args.no_render:
             env.render('human')
 
