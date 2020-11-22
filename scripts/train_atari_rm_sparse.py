@@ -108,7 +108,7 @@ if __name__ == '__main__':  # noqa: C901
     test_loader = th.utils.data.DataLoader(test, batch_size=20, shuffle=False, num_workers=0)
     
     reward_model = RewardModel(env, device)
-    optimizer = th.optim.Adam(reward_model.parameters(), weight_decya=1e-4)
+    optimizer = th.optim.Adam(reward_model.parameters(), weight_decay=1e-4)
     loss_fn = th.nn.MSELoss(reduction="sum")
     
     num_batches = 0

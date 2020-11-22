@@ -52,3 +52,41 @@ class CustomRewardWrapper(VecEnvWrapper):
         return self.venv.reset()
 
 
+class CustomRewardSSWrapper(VecEnvWrapper):
+    """
+    Overrides environment reward with a given reward function R(s, s').
+    """
+
+    def __init__(self, venv, reward_function):
+        super(CustomRewardSSWrapper, self).__init__(venv)
+        self.reward_function = reward_function
+        self.prev_obs = None
+
+    def step_wait(self) -> 'GymStepReturn':
+        obs, rewards, dones, infos = self.venv.step_wait()
+        custom_rewards = []
+        for k in range(len(rewards)):
+            if dones[k]:
+                reward_input = np.array((self.prev_obs[k], infos[k]['terminal_observation'])).astype(np.float32)
+                reward_input = np.expand_dims(reward_input, axis=0)
+                custom_rewards.append(self.reward_function(reward_input))
+            else:
+                reward_input = np.array((self.prev_obs[k], obs[k])).astype(np.float32)
+                reward_input = np.expand_dims(reward_input, axis=0)
+                custom_rewards.append(self.reward_function(reward_input))
+        custom_rewards = np.array(custom_rewards)
+        if type(custom_rewards) is th.Tensor:
+            custom_rewards = custom_rewards.cpu().detach().numpy()
+        if len(custom_rewards.shape) == 2:
+            custom_rewards = custom_rewards.flatten()
+        elif len(custom_rewards.shape) == 1:
+            pass
+        else:
+            raise Exception("Weirdly shaped reward from custom reward function")
+        self.prev_obs = obs
+        return obs, custom_rewards, dones, infos
+
+    def reset(self) -> np.ndarray:
+        obs = self.venv.reset()
+        self.prev_obs = obs
+        return obs

@@ -198,6 +198,7 @@ if __name__ == '__main__':  # noqa: C901
     if 'normalize' in hyperparams.keys():
         normalize = hyperparams['normalize']
         if isinstance(normalize, str):
+            print('normalize hyperparam is apparently a string')
             normalize_kwargs = eval(normalize)
             normalize = True
         del hyperparams['normalize']
@@ -257,22 +258,22 @@ if __name__ == '__main__':  # noqa: C901
             # On most env, SubprocVecEnv does not help and is quite memory hungry
             env = DummyVecEnv([make_env(env_id, i, args.seed, log_dir=log_dir, env_kwargs=env_kwargs,
                                         wrapper_class=env_wrapper) for i in range(n_envs)])
-        if normalize:
-            # Copy to avoid changing default values by reference
-            local_normalize_kwargs = normalize_kwargs.copy()
-            # Do not normalize reward for env used for evaluation
-            if eval_env:
-                if len(local_normalize_kwargs) > 0:
-                    local_normalize_kwargs['norm_reward'] = False
-                else:
-                    local_normalize_kwargs = {'norm_reward': False}
+        # if normalize:
+        #     # Copy to avoid changing default values by reference
+        #     local_normalize_kwargs = normalize_kwargs.copy()
+        #     # Do not normalize reward for env used for evaluation
+        #     if eval_env:
+        #         if len(local_normalize_kwargs) > 0:
+        #             local_normalize_kwargs['norm_reward'] = False
+        #         else:
+        #             local_normalize_kwargs = {'norm_reward': False}
 
-            if args.verbose > 0:
-                if len(local_normalize_kwargs) > 0:
-                    print(f"Normalization activated: {local_normalize_kwargs}")
-                else:
-                    print("Normalizing input and reward")
-            env = VecNormalize(env, **local_normalize_kwargs)
+        #     if args.verbose > 0:
+        #         if len(local_normalize_kwargs) > 0:
+        #             print(f"Normalization activated: {local_normalize_kwargs}")
+        #         else:
+        #             print("Normalizing input and reward")
+        #     env = VecNormalize(env, **local_normalize_kwargs)
 
         # Optional Frame-stacking
         if hyperparams.get('frame_stack', False):
@@ -306,12 +307,16 @@ if __name__ == '__main__':  # noqa: C901
             if args.verbose > 0:
                 print("Creating test environment")
 
-            save_vec_normalize = SaveVecNormalizeCallback(save_freq=1, save_path=params_path)
-            eval_callback = EvalCallback(create_env(1, eval_env=True), callback_on_new_best=save_vec_normalize,
+            # save_vec_normalize = SaveVecNormalizeCallback(save_freq=1, save_path=params_path)
+            # eval_callback = EvalCallback(create_env(1, eval_env=True), callback_on_new_best=save_vec_normalize,
+            #                              best_model_save_path=save_path, n_eval_episodes=args.eval_episodes,
+            #                              log_path=save_path, eval_freq=args.eval_freq,
+            #                              deterministic=not is_atari)
+            # save_vec_normalize = SaveVecNormalizeCallback(save_freq=1, save_path=params_path)
+            eval_callback = EvalCallback(env,
                                          best_model_save_path=save_path, n_eval_episodes=args.eval_episodes,
                                          log_path=save_path, eval_freq=args.eval_freq,
                                          deterministic=not is_atari)
-
             callbacks.append(eval_callback)
 
     # TODO: check for hyperparameters optimization
@@ -362,14 +367,14 @@ if __name__ == '__main__':  # noqa: C901
                                       tensorboard_log=tensorboard_log, verbose=args.verbose, **hyperparams)
 
         exp_folder = args.trained_agent.split('.zip')[0]
-        if normalize:
-            print("Loading saved running average")
-            stats_path = os.path.join(exp_folder, env_id)
-            if os.path.exists(os.path.join(stats_path, 'vecnormalize.pkl')):
-                env = VecNormalize.load(os.path.join(stats_path, 'vecnormalize.pkl'), env)
-            else:
-                # Legacy:
-                env.load_running_average(exp_folder)
+        # if normalize:
+        #     print("Loading saved running average")
+        #     stats_path = os.path.join(exp_folder, env_id)
+        #     if os.path.exists(os.path.join(stats_path, 'vecnormalize.pkl')):
+        #         env = VecNormalize.load(os.path.join(stats_path, 'vecnormalize.pkl'), env)
+        #     else:
+        #         # Legacy:
+        #         env.load_running_average(exp_folder)
 
         replay_buffer_path = os.path.join(os.path.dirname(args.trained_agent), 'replay_buffer.pkl')
         if os.path.exists(replay_buffer_path):
@@ -436,7 +441,7 @@ if __name__ == '__main__':  # noqa: C901
     print(f"Log path: {save_path}")
 
     try:
-        model.learn(n_timesteps, eval_log_path=save_path, eval_env=eval_env, eval_freq=args.eval_freq, **kwargs)
+        model.learn(n_timesteps, eval_log_path=save_path, eval_env=env, eval_freq=args.eval_freq, **kwargs)
     except KeyboardInterrupt:
         pass
 
@@ -449,8 +454,8 @@ if __name__ == '__main__':  # noqa: C901
         print("Saving replay buffer")
         model.save_replay_buffer(os.path.join(save_path, 'replay_buffer.pkl'))
 
-    if normalize:
+    # if normalize:
         # Important: save the running average, for testing the agent we need that normalization
-        model.get_vec_normalize_env().save(os.path.join(params_path, 'vecnormalize.pkl'))
+        # model.get_vec_normalize_env().save(os.path.join(params_path, 'vecnormalize.pkl'))
         # Deprecated saving:
         # env.save_running_average(params_path)
