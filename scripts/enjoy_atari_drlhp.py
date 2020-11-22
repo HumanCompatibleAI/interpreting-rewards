@@ -143,7 +143,7 @@ def main():  # noqa: C901
         # Dummy buffer size as we don't need memory to enjoy the trained agent
         kwargs.update(dict(buffer_size=1))
 
-    model = ALGOS[algo].load(model_path, env=env, **kwargs)
+    model = ALGOS[algo].load(model_path, env=env, device='cuda:2', **kwargs)
 
     obs = env.reset()
 
