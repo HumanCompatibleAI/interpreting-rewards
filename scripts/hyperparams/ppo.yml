@@ -2,6 +2,8 @@ maze:
   policy: 'MlpPolicy'
   gamma: 0.97
   n_timesteps: !!float 1e5
+  normalize: false
+  learning_rate: lin_1.0e-4
 
 atari:
   env_wrapper:
