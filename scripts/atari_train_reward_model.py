@@ -29,8 +29,6 @@ from stable_baselines3.common.utils import constant_fn, get_device
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3 import A2C
 
-import mazelab
-
 sys.path.append('../rl-baselines3-zoo/')
 # Register custom envs
 import utils.import_envs  # noqa: F401 pytype: disable=import-error
@@ -39,6 +37,8 @@ from utils.hyperparams_opt import hyperparam_optimization
 from utils.callbacks import SaveVecNormalizeCallback
 from utils.noise import LinearNormalActionNoise
 from utils.utils import StoreDict, get_callback_class
+
+from interp.common.models import AtariRewardModel
 
 class RewardData(th.utils.data.Dataset):
     def __init__(self, env_id, train=True):
@@ -49,33 +49,21 @@ class RewardData(th.utils.data.Dataset):
             self.group = self.f['test']
     
     def __getitem__(self, k):
-        input = self.group['inputs'][k]
-        output = self.group['outputs'][k]
-        return (input, output)
+        if k % 2 == 0:
+            input = self.group['zeros-inputs'][k // 2]
+            label = self.group['zeros-labels'][k // 2]
+            return (input, label)
+        else:
+            input = self.group['ones-inputs'][k // 2]
+            label = self.group['ones-labels'][k // 2]
+            return (input, label)
     
     def __len__(self):
-        return self.group['inputs'].shape[0]
+        return self.group['ones-labels'].shape[0] + self.group['zeros-labels'].shape[0]
     
     def close(self):
         self.f.close()
- 
-
-class RewardModel(nn.Module):
-    """A reward model using an A2C feature extractor"""
-    def __init__(self, env, device):
-        super(RewardModel, self).__init__()
-        self.ac_model = A2C('MlpPolicy', env).policy
-        self.reward_net = nn.Linear(64, 1).to(device)
-        self.device = device
-    
-    def forward(self, obs):
-        latent, _, _= self.ac_model._get_latent(th.tensor(obs).to(self.device))
-        return self.reward_net(latent)
-    
-    def freeze_extractor(self):
-        for p in self.ac_model.policy.features_extractor.parameters():
-            p.requires_grad = False
-
+        
 
 if __name__ == '__main__':  # noqa: C901
     parser = argparse.ArgumentParser()
@@ -88,10 +76,14 @@ if __name__ == '__main__':  # noqa: C901
     print(f"Using {device} device.")
 
     env_id = args.env
-    if 'maze' not in env_id.lower():
-        raise Exception(f"env {env_id} is not a maze env")
-    env = gym.make(env_id)
+    if 'NoFrameskip' not in env_id:
+        raise Exception(f"env {env_id} is not an Atari env")
+    env = gym.make(args.env)
+    env = AtariWrapper(env)
+    env = DummyVecEnv([lambda: env])
+    env = VecFrameStack(env, n_stack=4)
     print(f"Created env with obs.shape = {env.reset().shape}.")
+    
     
     train = RewardData(env_id, train=True)
     test = RewardData(env_id, train=False)
@@ -99,7 +91,7 @@ if __name__ == '__main__':  # noqa: C901
     train_loader = th.utils.data.DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
     test_loader = th.utils.data.DataLoader(test, batch_size=20, shuffle=False, num_workers=0)
     
-    reward_model = RewardModel(env, device)
+    reward_model = AtariRewardModel(env, device)
     optimizer = th.optim.Adam(reward_model.parameters())
     loss_fn = th.nn.MSELoss(reduction="sum")
     

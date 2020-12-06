@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+# --------------------------------------------------------------------
+# Prepare the rl-baselines3-zoo submodule for use with mazelab.
+# --------------------------------------------------------------------
+
+hyperparams = r"""
+EmptyMaze-10x10-FixedGoal-v3:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 30000
+  normalize: false
+  learning_rate: lin_1.0e-4
+
+EmptyMaze-10x10-CoinFlipGoal-v3:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 45000
+  normalize: false
+  learning_rate: lin_1.0e-4
+
+EmptyMaze-10x10-RandomGoal-v3:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 250000
+  normalize: false
+  learning_rate: lin_1.0e-4
+
+"""
+
+if __name__ == '__main__':
+    with open('rl-baselines3-zoo/hyperparams/ppo.yml', 'r') as f:
+        original = f.read()
+        new = hyperparams + original
+    with open('rl-baselines3-zoo/hyperparams/ppo.yml', 'w') as f:
+        f.write(new)
