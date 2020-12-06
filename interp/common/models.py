@@ -5,6 +5,7 @@ import torch as th
 import torch.nn as nn
 
 from stable_baselines3 import A2C
+from stable_baselines3.common.vec_env import VecTransposeImage
 
 
 class MazeRewardModel(nn.Module):
@@ -36,7 +37,7 @@ class MazeRewardModel(nn.Module):
 class AtariRewardModel(nn.Module):
     """A reward model for Atari, using the CNN feature extractor that SB3 policies use."""
     def __init__(self, env, device):
-        super(RewardModel, self).__init__()
+        super(AtariRewardModel, self).__init__()
         self.ac_model = A2C('CnnPolicy', env).policy
         self.reward_net = nn.Linear(512, 1).to(device)
         self.device = device

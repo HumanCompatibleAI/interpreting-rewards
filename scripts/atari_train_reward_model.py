@@ -4,6 +4,7 @@ import os
 import sys
 import importlib
 import time
+import random
 import uuid
 import warnings
 from collections import OrderedDict
@@ -28,15 +29,6 @@ from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckA
 from stable_baselines3.common.utils import constant_fn, get_device
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3 import A2C
-
-sys.path.append('../rl-baselines3-zoo/')
-# Register custom envs
-import utils.import_envs  # noqa: F401 pytype: disable=import-error
-from utils import make_env, ALGOS, linear_schedule, get_latest_run_id, get_wrapper_class
-from utils.hyperparams_opt import hyperparam_optimization
-from utils.callbacks import SaveVecNormalizeCallback
-from utils.noise import LinearNormalActionNoise
-from utils.utils import StoreDict, get_callback_class
 
 from interp.common.models import AtariRewardModel
 
@@ -70,10 +62,19 @@ if __name__ == '__main__':  # noqa: C901
     parser.add_argument('--env', type=str, default="BreakoutNoFrameskip-v4", help='environment ID')
     parser.add_argument('-e', '--epochs', help='Number of epochs to train for', default=5,
                         type=int)
+    parser.add_argument('-s', '--seed', help="Random seed", default=0, type=int)
     args = parser.parse_args()
 
     device = get_device()
     print(f"Using {device} device.")
+
+    seed = args.seed
+    random.seed(seed)
+    np.random.seed(seed)
+    th.manual_seed(seed)
+    th.backends.cudnn.deterministic = True
+    th.backends.cudnn.benchmark = False
+    set_random_seed(seed)
 
     env_id = args.env
     if 'NoFrameskip' not in env_id:
