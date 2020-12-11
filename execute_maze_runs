@@ -1,0 +1,36 @@
+
+cd rl-baselines3-zoo
+
+python train.py --algo ppo \
+                --env EmptyMaze-10x10-CoinFlipGoal-v3 \
+                -f ../agents-custom \
+                --gym-packages mazelab \
+		--eval-freq 500 \
+		--seed 0 \
+                --hyperparam-title CoinFlipGoalWithGroundTruth 
+
+python train.py --algo ppo \
+                --env EmptyMaze-10x10-CoinFlipGoal-v3 \
+                -f ../agents-custom \
+                --gym-packages mazelab \
+		--eval-freq 500 \
+		--seed 0 \
+                --hyperparam-title CoinFlipGoalWithCoinFlipGoalRewardModel
+
+python train.py --algo ppo \
+                --env EmptyMaze-10x10-TwoGoals-v3 \
+                -f ../agents-custom \
+                --gym-packages mazelab \
+		--eval-freq 500 \
+		--seed 0 \
+                --hyperparam-title TwoGoalsWithGroundTruth 
+
+python train.py --algo ppo \
+                --env EmptyMaze-10x10-TwoGoals-v3 \
+                -f ../agents-custom \
+                --gym-packages mazelab \
+		--eval-freq 500 \
+		--seed 0 \
+                --hyperparam-title TwoGoalsWithCoinFlipGoalRewardModel
+
+cd ..

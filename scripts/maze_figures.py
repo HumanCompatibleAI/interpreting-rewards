@@ -224,6 +224,8 @@ if __name__ == '__main__':
     plt.subplots_adjust(left=0.07, right=0.93, bottom=0.05, top=0.95)
 
     plt.savefig(f"{fig_path}/CoinFlipsaliencymapssixstates.pdf", dpi=350)
+    plt.savefig(f"{fig_path}/CoinFlipsaliencymapssixstates.png", dpi=350)
+
 
 
     # In[12]:
@@ -356,5 +358,116 @@ if __name__ == '__main__':
     plt.subplots_adjust(left=0.05, right=0.95)
 
     plt.savefig(f"{fig_path}/CoinFlipcounterfactuals.pdf", dpi=350)
+    plt.savefig(f"{fig_path}/CoinFlipcounterfactuals.png", dpi=350)
 
 
+
+
+
+custom_trained_agents_path = Path('../agents-custom')
+if custom_trained_agents_path.exists():
+    evaluations = {
+        'CoinFlipGoal': {
+            'true': Path(custom_trained_agents_path, 'ppo/EmptyMaze-10x10-CoinFlipGoal-v3_1/evaluations.npz'),
+            'rm': Path(custom_trained_agents_path, 'ppo/EmptyMaze-10x10-CoinFlipGoal-v3_2/evaluations.npz')
+        },
+        'TwoGoals': {
+            'true': Path(custom_trained_agents_path, 'ppo/EmptyMaze-10x10-TwoGoals-v3_1/evaluations.npz'),
+            'rm': Path(custom_trained_agents_path, 'ppo/EmptyMaze-10x10-TwoGoals-v3_2/evaluations.npz')
+        }
+    }
+
+    plt.rcParams.update({
+    #     "text.usetex": True,
+    #     "font.family": "serif",
+        "font.serif": ["Times"],
+    })
+
+    plt.figure(figsize=(5.5, 2.7))
+
+    ax = plt.subplot(2, 2, 1)
+    with np.load(evaluations['CoinFlipGoal']['true']) as data:
+        timesteps = data['timesteps']
+        results = data['results']
+    means = np.mean(results, axis=1).flatten()
+    stds = np.std(results, axis=1).flatten()
+    ax.plot(timesteps, means, color="blue")
+    ax.fill_between(timesteps, means-stds, means+stds, alpha=0.1, color="blue")
+    # plt.ylim(-5, 40)
+    ax.set_xlabel("Timesteps", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylabel("Episode Return", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylim(0, 1.1)
+    plt.xticks(fontsize=7, fontfamily='Times New Roman')
+    plt.yticks(fontsize=7, fontfamily='Times New Roman')
+    plt.yticks([0, 0.5, 1], fontsize=7, fontfamily='Times New Roman')
+    ax.xaxis.labelpad=1
+    # plt.legend(loc='upper left', prop={'size': 6})
+    ax.set_title("CoinFlipGoal w/ True Reward", fontsize=9, fontfamily='Times New Roman')
+    ax.text(0.5, -0.75, "(a)", size=10, ha="center", weight="bold", fontfamily='Times New Roman', 
+             transform=ax.transAxes)
+
+    ax = plt.subplot(2, 2, 3)
+    with np.load(evaluations['CoinFlipGoal']['rm']) as data:
+        timesteps = data['timesteps']
+        results = data['results']
+    means = np.mean(results, axis=1).flatten()
+    stds = np.std(results, axis=1).flatten()
+    ax.plot(timesteps, means, color="blue")
+    ax.fill_between(timesteps, means-stds, means+stds, alpha=0.1, color="blue")
+    # plt.ylim(-5, 40)
+    ax.set_xlabel("Timesteps", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylabel("Episode Return", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylim(0, 1.1)
+    plt.xticks(fontsize=7, fontfamily='Times New Roman')
+    plt.yticks([0, 0.5, 1], fontsize=7, fontfamily='Times New Roman')
+    ax.xaxis.labelpad=1
+    # plt.legend(loc='upper left', prop={'size': 6})
+    ax.set_title("CoinFlipGoal w/ Regressed Reward", fontsize=9, fontfamily='Times New Roman')
+    ax.text(0.5, -0.75, "(c)", size=10, ha="center", weight="bold", fontfamily='Times New Roman', 
+             transform=ax.transAxes)
+
+    ax = plt.subplot(2, 2, 2)
+    with np.load(evaluations['TwoGoals']['true']) as data:
+        timesteps = data['timesteps']
+        results = data['results']
+    means = np.mean(results, axis=1).flatten()
+    stds = np.std(results, axis=1).flatten()
+    ax.plot(timesteps, means, color="blue")
+    ax.fill_between(timesteps, means-stds, means+stds, alpha=0.1, color="blue")
+    # plt.ylim(-5, 40)
+    ax.set_xlabel("Timesteps", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylabel("Episode Return", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylim(0, 1.1)
+    plt.xticks(fontsize=7, fontfamily='Times New Roman')
+    plt.yticks([0, 0.5, 1], fontsize=7, fontfamily='Times New Roman')
+    ax.xaxis.labelpad=1
+    # plt.legend(loc='upper left', prop={'size': 6})
+    ax.set_title("TwoGoals w/ True Reward", fontsize=9, fontfamily='Times New Roman')
+    ax.text(0.5, -0.75, "(b)", size=10, ha="center", weight="bold", fontfamily='Times New Roman', 
+             transform=ax.transAxes)
+
+    ax = plt.subplot(2, 2, 4)
+    with np.load(evaluations['TwoGoals']['rm']) as data:
+        timesteps = data['timesteps']
+        results = data['results']
+    means = np.mean(results, axis=1).flatten()
+    stds = np.std(results, axis=1).flatten()
+    ax.plot(timesteps, means, color="blue")
+    ax.fill_between(timesteps, means-stds, means+stds, alpha=0.1, color="blue")
+    # plt.ylim(-5, 40)
+    ax.set_xlabel("Timesteps", fontsize=9, fontfamily='Times New Roman')
+    ax.set_ylabel("Episode Return", fontsize=7, fontfamily='Times New Roman')
+    ax.set_ylim(0, 1.1)
+    plt.xticks(fontsize=7, fontfamily='Times New Roman')
+    plt.yticks([0, 0.5, 1], fontsize=7, fontfamily='Times New Roman')
+    ax.xaxis.labelpad=1
+    # plt.legend(loc='upper left', prop={'size': 6})
+    ax.set_title("TwoGoals w/ CoinFlipGoal's Regressed Reward", fontsize=9, fontfamily='Times New Roman')
+    ax.text(0.5, -0.75, "(d)", size=10, ha="center", weight="bold", fontfamily='Times New Roman', 
+             transform=ax.transAxes)
+
+
+    plt.subplots_adjust(hspace=1.2, wspace=0.4, bottom=0.2, top=0.92)
+
+    plt.savefig(f"{fig_path}/maze-training-curves.pdf", dpi=100)
+    plt.savefig(f"{fig_path}/maze-training-curves.png", dpi=350)

@@ -5,6 +5,49 @@
 # --------------------------------------------------------------------
 
 hyperparams = r"""
+CoinFlipGoalWithGroundTruth:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 45000
+  normalize: false
+  learning_rate: lin_1.0e-4
+
+CoinFlipGoalWithCoinFlipGoalRewardModel:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 45000
+  normalize: false
+  learning_rate: lin_1.0e-4
+  env_wrapper:
+    - interp.common.wrappers.WrapWithRewardModel:
+        model_path: "../reward-models/EmptyMaze-10x10-CoinFlipGoal-v3-reward_model.pt" 
+
+TwoGoalsWithGroundTruth:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 45000
+  normalize: false
+  learning_rate: lin_1.0e-4
+
+TwoGoalsWithCoinFlipGoalRewardModel:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 45000
+  normalize: false
+  learning_rate: lin_1.0e-4
+  env_wrapper:
+    - interp.common.wrappers.WrapWithRewardModel:
+        model_path: "../reward-models/EmptyMaze-10x10-CoinFlipGoal-v3-reward_model.pt" 
+
+
+
+EmptyMaze-10x10-FixedGoal-v3:
+  policy: 'MlpPolicy'
+  gamma: 0.97
+  n_timesteps: !!float 30000
+  normalize: false
+  learning_rate: lin_1.0e-4
+
 EmptyMaze-10x10-FixedGoal-v3:
   policy: 'MlpPolicy'
   gamma: 0.97
