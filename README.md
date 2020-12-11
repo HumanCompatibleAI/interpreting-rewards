@@ -1,4 +1,5 @@
 # interpreting-rewards
+
 This repository accompanies the paper [Understanding Learned Reward Functions](https://ericjmichaud.com/rewards.pdf) by [Eric J. Michaud](https://ericjmichaud.com), [Adam Gleave](https://gleave.me) and [Stuart Russell](https://people.eecs.berkeley.edu/~russell/). It aims to enable easy reproduction of the results from that paper and to serve as a branching-off point for future iterations of the work. **Note that this repository is still very much a work in progress. Although you should be able to replicate many of the figures from scratch, the pipeline for training agents using a learned reward function (which Figure 3 and Table 1 need) is currently broken.**
 
 
@@ -6,7 +7,7 @@ This repository accompanies the paper [Understanding Learned Reward Functions](h
 
 First, clone the repository:
 ```
-git clone -b dev-abridged --recurse-submodules https://github.com/HumanCompatibleAI/interpreting-rewards.git
+git clone --recurse-submodules https://github.com/HumanCompatibleAI/interpreting-rewards.git
 ```
 Which will also clone a special version of `rl-baselines3-zoo` as a submodule.
 
